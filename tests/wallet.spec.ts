@@ -2,7 +2,6 @@ import {
   makeClient,
   maybeDescribeUnlocked,
   shouldTestSend,
-  WALLET_PASSPHRASE,
   unlockWallet,
   lockWallet,
 } from './setup.js';
@@ -231,8 +230,8 @@ describe('listReceivedByAddress', () => {
 });
 
 maybeDescribeUnlocked('signMessage', () => {
-  beforeAll(() => client.walletPassphrase(WALLET_PASSPHRASE, 10));
-  afterAll(() => client.walletLock());
+  beforeAll(() => unlockWallet(client, 10));
+  afterAll(() => lockWallet(client));
 
   it('returns a signature string for a wallet address', async () => {
     // signmessage only works with legacy (P2PKH) addresses.
@@ -264,13 +263,6 @@ describe('lockUnspent', () => {
       { txid: utxo.txid, vout: utxo.vout },
     ]);
     expect(unlocked).toBe(true);
-  });
-});
-
-describe('setMinInput', () => {
-  it('is a function', () => {
-    // Placeholder: mutates node wallet setting
-    expect(typeof client.setMinInput).toBe('function');
   });
 });
 

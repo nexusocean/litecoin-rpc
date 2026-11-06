@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0] - 2026-11-06
+
+### Removed
+
+These call RPCs that Litecoin Core 0.21 doesn't have, so they always failed
+with "Method not found":
+
+- Fee methods: `getFeeRate`, `estimateFee`, `estimatePriority`,
+  `estimateSmartPriority`. Use `estimateSmartFee`.
+- `getTotalSupply`, `listAddressBalances`, `setMinInput`, `clearMempool`.
+- Types: `FeeRate`, `SmartPriorityEstimate`, `TotalSupply`,
+  `AddressBalances`.
+
+### Changed
+
+- README: the address index methods need a patched node; stock Litecoin
+  Core doesn't have them, with or without `-addressindex`.
+
 ## [0.1.0] - 2026-11-06
 
 ### Added

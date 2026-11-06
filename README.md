@@ -137,8 +137,10 @@ try {
 - Wallet methods need the wallet enabled on the node.
 - The address index methods (`getAddressBalance`, `getAddressTxIds`,
   `getAddressDeltas`, `getAddressMempool`, `getAddressUtxos`, `getSpentInfo`)
-  need a node started with `-addressindex` (and `-spentindex` for
-  `getSpentInfo`).
+  are not part of Litecoin Core. They need a patched node with an address
+  index, such as the builds block explorers run, started with
+  `-addressindex` (and `-spentindex` for `getSpentInfo`). On stock Litecoin
+  Core they fail with "Method not found".
 - `getRawTransaction` for transactions outside the mempool and wallet needs
   `-txindex`.
 

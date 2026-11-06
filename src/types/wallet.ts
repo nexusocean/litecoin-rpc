@@ -114,8 +114,6 @@ export type AddressGroupingEntry = [string, number, string?];
 
 export type AddressGrouping = AddressGroupingEntry[][];
 
-export type AddressBalances = Record<string, number>;
-
 export interface LockedUnspent {
   txid: string;
   vout: number;

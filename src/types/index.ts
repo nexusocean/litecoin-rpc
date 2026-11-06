@@ -54,7 +54,6 @@ export type {
   AddressMempoolDelta,
   AddressUtxo,
   SpentInfo,
-  TotalSupply,
 } from './address.js';
 
 export type {
@@ -69,7 +68,6 @@ export type {
   ListSinceBlockResult,
   AddressGroupingEntry,
   AddressGrouping,
-  AddressBalances,
   LockedUnspent,
   ReceivedByAddressEntry,
   BumpFeeOptions,
@@ -89,11 +87,7 @@ export type {
   MwebUnspentOutput,
 } from './utxo.js';
 
-export type {
-  FeeRate,
-  SmartFeeEstimate,
-  SmartPriorityEstimate,
-} from './fees.js';
+export type { SmartFeeEstimate } from './fees.js';
 
 export type {
   MultisigResult,

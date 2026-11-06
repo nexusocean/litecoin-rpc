@@ -47,7 +47,6 @@ export type {
   AddressMempoolDelta,
   AddressUtxo,
   SpentInfo,
-  TotalSupply,
   BlockHeader,
   TxOut,
   // Wallet
@@ -65,7 +64,6 @@ export type {
   MwebUnspentOutput,
   AddressGroupingEntry,
   AddressGrouping,
-  AddressBalances,
   LockedUnspent,
   ReceivedByAddressEntry,
   BumpFeeOptions,
@@ -80,9 +78,7 @@ export type {
   Balances,
   BalanceGroup,
   // Fees
-  FeeRate,
   SmartFeeEstimate,
-  SmartPriorityEstimate,
   // Util
   MultisigResult,
   DescriptorInfo,

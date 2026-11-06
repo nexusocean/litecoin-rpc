@@ -11,7 +11,6 @@ import type {
   ListSinceBlockResult,
   UnspentOutput,
   AddressGrouping,
-  AddressBalances,
   LockedUnspent,
   ReceivedByAddressEntry,
   BumpFeeOptions,
@@ -72,7 +71,6 @@ export interface WalletMethods {
     p2sh?: boolean,
   ): Promise<null>;
   getRawChangeAddress(): Promise<string>;
-  listAddressBalances(minAmount?: number): Promise<AddressBalances>;
   listAddressGroupings(): Promise<AddressGrouping>;
   listLockUnspent(): Promise<LockedUnspent[]>;
   listReceivedByAddress(
@@ -80,7 +78,6 @@ export interface WalletMethods {
     includeEmpty?: boolean,
     includeWatchOnly?: boolean,
   ): Promise<ReceivedByAddressEntry[]>;
-  setMinInput(amount: number): Promise<boolean>;
   setTxFee(amount: number): Promise<boolean>;
   // dumpprivkey requires a one-time confirmation code, undocumented in CLI help.
   // First call (no code) always errors with the code embedded in the error message;
@@ -259,9 +256,6 @@ export function createWalletMethods(
 
     getRawChangeAddress: () => rpc<string>('getrawchangeaddress'),
 
-    listAddressBalances: (minAmount = 0) =>
-      rpc<AddressBalances>('listaddressbalances', [minAmount]),
-
     listAddressGroupings: () => rpc<AddressGrouping>('listaddressgroupings'),
 
     listLockUnspent: () => rpc<LockedUnspent[]>('listlockunspent'),
@@ -277,8 +271,6 @@ export function createWalletMethods(
         includeEmpty,
         includeWatchOnly ?? null,
       ]),
-
-    setMinInput: (amount: number) => rpc<boolean>('setmininput', [amount]),
 
     setTxFee: (amount: number) => rpc<boolean>('settxfee', [amount]),
 

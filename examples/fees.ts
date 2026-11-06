@@ -1,8 +1,8 @@
 /**
  * Fees
  *
- * Estimate transaction fees and fee rates for confirmation within
- * a target number of blocks.
+ * Estimate the fee rate needed for confirmation within a target number
+ * of blocks.
  *
  */
 
@@ -24,16 +24,16 @@ const client = createLitecoinRpcClient({
 async function main(nblocks: number = 5) {
   const blocks = Math.round(nblocks);
 
-  const [feeRate, estimatedFee, smartFee] = await Promise.all([
-    client.getFeeRate(),
-    client.estimateFee(blocks),
-    client.estimateSmartFee(blocks),
-  ]);
+  const estimate = await client.estimateSmartFee(blocks);
 
-  console.log(`Target:        ${blocks} blocks`);
-  console.log(`Fee rate:      ${JSON.stringify(feeRate)}`);
-  console.log(`Estimated fee: ${estimatedFee} LTC`);
-  console.log(`Smart fee:     ${JSON.stringify(smartFee)}`);
+  console.log(`Target:    ${blocks} blocks`);
+  if (estimate.feerate === undefined) {
+    // Common on testnet and regtest, where there is little fee history.
+    console.log(`No estimate: ${estimate.errors?.join('; ') ?? 'unknown'}`);
+  } else {
+    console.log(`Fee rate:  ${estimate.feerate} LTC/kB`);
+    console.log(`Within:    ${estimate.blocks} blocks`);
+  }
 }
 
 main().catch(console.error);

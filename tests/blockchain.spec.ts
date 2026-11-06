@@ -131,13 +131,6 @@ describe('verifyChain', () => {
   });
 });
 
-describe('clearMempool', () => {
-  it('is a function', () => {
-    // Placeholder: write/mutating (clears local mempool)
-    expect(typeof client.clearMempool).toBe('function');
-  });
-});
-
 describe('preciousBlock', () => {
   it('is a function', () => {
     // Placeholder: write/mutating (alters local block-tree preference)

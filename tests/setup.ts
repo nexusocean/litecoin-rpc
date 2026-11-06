@@ -64,18 +64,25 @@ export const maybeDescribeUnlocked = TEST_WALLET_PASSPHRASE
 
 export const WALLET_PASSPHRASE = TEST_WALLET_PASSPHRASE ?? '';
 
-// For tests that need private keys. On an unencrypted wallet (no passphrase
-// set) these do nothing.
+// For tests that need private keys. They do nothing on an unencrypted wallet
+// (getwalletinfo has no unlocked_until) or when no passphrase is set, since
+// walletpassphrase and walletlock both error on unencrypted wallets.
+async function isEncrypted(client: LitecoinRpcClient): Promise<boolean> {
+  const info = await client.getWalletInfo();
+  return info.unlocked_until !== undefined;
+}
+
 export async function unlockWallet(
   client: LitecoinRpcClient,
   seconds = 30,
 ): Promise<void> {
-  if (WALLET_PASSPHRASE)
+  if (WALLET_PASSPHRASE && (await isEncrypted(client)))
     await client.walletPassphrase(WALLET_PASSPHRASE, seconds);
 }
 
 export async function lockWallet(client: LitecoinRpcClient): Promise<void> {
-  if (WALLET_PASSPHRASE) await client.walletLock();
+  if (WALLET_PASSPHRASE && (await isEncrypted(client)))
+    await client.walletLock();
 }
 
 export const maybeDescribeSpentInfo =

@@ -37,7 +37,3 @@ export interface SpentInfo {
   txid: string;
   index: number;
 }
-
-export interface TotalSupply {
-  total: number;
-}

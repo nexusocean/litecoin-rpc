@@ -45,7 +45,6 @@ export interface BlockchainMethods {
   getRawMempool(verbose: true): Promise<RawMempool>;
   getRawMempool(verbose: false): Promise<string[]>;
   getMempoolEntry(txid: string): Promise<MempoolEntry>;
-  clearMempool(): Promise<string[]>;
   getChainTips(): Promise<ChainTip[]>;
   getDifficulty(): Promise<number>;
   getMempoolAncestors(txid: string): Promise<string[]>;
@@ -125,8 +124,6 @@ export function createBlockchainMethods(
     getMempoolEntry(txid: string): Promise<MempoolEntry> {
       return callRpc<MempoolEntry>(http, 'getmempoolentry', [txid]);
     },
-
-    clearMempool: () => callRpc<string[]>(http, 'clearmempool'),
 
     getChainTips: () => callRpc<ChainTip[]>(http, 'getchaintips'),
 

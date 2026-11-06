@@ -7,7 +7,6 @@ import type {
   AddressMempoolDelta,
   AddressUtxo,
   SpentInfo,
-  TotalSupply,
 } from '../../types/index.js';
 
 export interface AddressIndexMethods {
@@ -21,7 +20,6 @@ export interface AddressIndexMethods {
   getAddressMempool(addresses: string[]): Promise<AddressMempoolDelta[]>;
   getAddressUtxos(addresses: string[]): Promise<AddressUtxo[]>;
   getSpentInfo(txid: string, index: number): Promise<SpentInfo>;
-  getTotalSupply(): Promise<TotalSupply>;
 }
 
 export function createAddressIndexMethods(
@@ -63,10 +61,6 @@ export function createAddressIndexMethods(
 
     getSpentInfo(txid: string, index: number): Promise<SpentInfo> {
       return callRpc<SpentInfo>(http, 'getspentinfo', [{ txid, index }]);
-    },
-
-    getTotalSupply(): Promise<TotalSupply> {
-      return callRpc<TotalSupply>(http, 'gettotalsupply', []);
     },
   };
 }

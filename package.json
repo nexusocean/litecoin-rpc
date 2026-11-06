@@ -1,7 +1,7 @@
 {
   "name": "@nexusocean/litecoin-rpc",
   "description": "Modern TypeScript client for Litecoin's JSON-RPC interface",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publishConfig": {
     "access": "public"
   },
