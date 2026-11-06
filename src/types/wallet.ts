@@ -1,16 +1,26 @@
 export interface WalletInfo {
-  walletname?: string;
+  walletname: string;
   walletversion: number;
+  /** Database format, e.g. `'bdb'` or `'sqlite'`. */
+  format: string;
   balance: number;
   unconfirmed_balance: number;
   immature_balance: number;
   txcount: number;
-  keypoololdest: number;
+  /** Legacy wallets only. */
+  keypoololdest?: number;
   keypoolsize: number;
   keypoolsize_hd_internal?: number;
-  paytxfee: number;
-  hdmasterkeyid?: string;
+  /** Only present on encrypted wallets; 0 means locked. */
   unlocked_until?: number;
+  paytxfee: number;
+  /** Only present when HD is enabled. */
+  hdseedid?: string;
+  private_keys_enabled: boolean;
+  avoid_reuse: boolean;
+  /** `false` when idle, otherwise the progress of the running rescan. */
+  scanning: false | { duration: number; progress: number };
+  descriptors: boolean;
 }
 export interface ValidateAddressResult {
   isvalid: boolean;
@@ -48,6 +58,9 @@ export interface AddressInfo {
   labels: string[];
   ischange: boolean;
 }
+/** `address_type` values accepted by `getnewaddress`. */
+export type AddressType = 'legacy' | 'p2sh-segwit' | 'bech32' | 'mweb';
+
 export type WalletTxCategory =
   'send' | 'receive' | 'generate' | 'immature' | 'orphan';
 export interface WalletTransactionDetail {
@@ -148,6 +161,21 @@ export interface ImportMultiRequest {
   internal?: boolean;
   watchonly?: boolean;
   label?: string;
+}
+
+export interface CreateWalletOptions {
+  /** Watch-only wallet: no private keys, cannot sign. Required for xpub keypools via importMulti. */
+  disablePrivateKeys?: boolean;
+  /** Create without an HD seed or keys; import them afterwards. */
+  blank?: boolean;
+  passphrase?: string;
+  avoidReuse?: boolean;
+  descriptors?: boolean;
+}
+
+export interface RescanBlockchainResult {
+  start_height: number;
+  stop_height: number;
 }
 
 export interface ImportMultiOptions {

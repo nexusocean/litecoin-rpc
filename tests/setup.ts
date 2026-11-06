@@ -1,3 +1,4 @@
+import process from 'node:process';
 import dotenv from 'dotenv';
 import { createLitecoinRpcClient } from '../src/index.js';
 import type { LitecoinRpcClient, RpcConfig } from '../src/index.js';
@@ -16,8 +17,8 @@ const {
   TEST_WALLET_PASSPHRASE,
   TEST_SPENT_TXID,
   TEST_SPENT_INDEX,
-  TEST_MULTIWALLET,
-} = parsed as Record<string, string>;
+  TEST_WALLET,
+} = (parsed ?? {}) as Record<string, string>;
 
 if (!LTC_HOST || !LTC_USER || !LTC_PASS || !LTC_PORT || !LTC_PROTOCOL) {
   throw new Error('Missing required LTC_* env vars in .env.test');
@@ -31,10 +32,20 @@ export const config = {
   protocol: LTC_PROTOCOL as 'http' | 'https',
 };
 
+export const WALLET = TEST_WALLET || undefined;
+
+// Ignores TEST_WALLET, for tests about unscoped wallet calls.
+export function makeUnscopedClient(): LitecoinRpcClient {
+  return createLitecoinRpcClient(config);
+}
+
+// With TEST_WALLET set, wallet methods go to /wallet/<name>, so other wallets
+// can stay loaded. call() and batch() stay unscoped.
 export function makeClient(
   overrides: Partial<RpcConfig> = {},
 ): LitecoinRpcClient {
-  return createLitecoinRpcClient({ ...config, ...overrides });
+  const client = createLitecoinRpcClient({ ...config, ...overrides });
+  return WALLET ? { ...client, ...client.wallet(WALLET) } : client;
 }
 
 export const shouldTestSend = LTC_TEST_SEND === '1';
@@ -53,6 +64,20 @@ export const maybeDescribeUnlocked = TEST_WALLET_PASSPHRASE
 
 export const WALLET_PASSPHRASE = TEST_WALLET_PASSPHRASE ?? '';
 
+// For tests that need private keys. On an unencrypted wallet (no passphrase
+// set) these do nothing.
+export async function unlockWallet(
+  client: LitecoinRpcClient,
+  seconds = 30,
+): Promise<void> {
+  if (WALLET_PASSPHRASE)
+    await client.walletPassphrase(WALLET_PASSPHRASE, seconds);
+}
+
+export async function lockWallet(client: LitecoinRpcClient): Promise<void> {
+  if (WALLET_PASSPHRASE) await client.walletLock();
+}
+
 export const maybeDescribeSpentInfo =
   TEST_SPENT_TXID && TEST_SPENT_INDEX ? describe : describe.skip;
 
@@ -64,5 +89,8 @@ export const SPENT_INDEX = TEST_SPENT_INDEX
 
 // Loads a second wallet on the node, which makes unscoped wallet calls in
 // other spec files fail with -19 while it runs. Run this spec on its own.
+// Shell only, not .env.test: the spec loads extra wallets, which breaks the
+// other specs if it runs alongside them. Run it on its own with
+// TEST_MULTIWALLET=1 npx jest tests/multi-wallet.spec.ts
 export const maybeDescribeMultiWallet =
-  TEST_MULTIWALLET === '1' ? describe : describe.skip;
+  process.env.TEST_MULTIWALLET === '1' ? describe : describe.skip;

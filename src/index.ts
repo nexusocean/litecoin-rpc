@@ -54,6 +54,7 @@ export type {
   WalletInfo,
   ValidateAddressResult,
   AddressInfo,
+  AddressType,
   WalletTxCategory,
   WalletTransactionDetail,
   WalletTransaction,
@@ -73,7 +74,9 @@ export type {
   ImportMultiRequest,
   ImportMultiOptions,
   ImportMultiResult,
+  CreateWalletOptions,
   CreateWalletResult,
+  RescanBlockchainResult,
   Balances,
   BalanceGroup,
   // Fees

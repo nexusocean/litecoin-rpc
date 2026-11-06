@@ -28,11 +28,16 @@ export interface CanonicalUnspentOutput {
   safe: boolean;
 }
 
-/** An MWEB output. `txid` holds the MWEB output ID; there is no `vout`. */
+/**
+ * An MWEB output. `txid` holds the MWEB output ID; there is no `vout`.
+ * While the wallet is locked the node reports `amount` as 0; unlock it
+ * (`walletPassphrase`) to get real amounts.
+ */
 export interface MwebUnspentOutput {
   txid: string;
   vout?: never;
   address: string;
+  label?: string;
   amount: number;
   confirmations: number;
   spendable: boolean;

@@ -1,7 +1,7 @@
 {
   "name": "@nexusocean/litecoin-rpc",
   "description": "Modern TypeScript client for Litecoin's JSON-RPC interface",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "publishConfig": {
     "access": "public"
   },
@@ -18,7 +18,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nexusocean/litecoin-rpc.git"
+    "url": "git+https://github.com/NexusOcean/litecoin-rpc.git"
   },
   "license": "MIT",
   "type": "module",

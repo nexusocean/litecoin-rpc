@@ -33,8 +33,11 @@ describe('call', () => {
   });
 
   it('applies a per-call timeout override', async () => {
+    // waitfornewblock holds the request for up to 3 s (unless a block lands),
+    // so a 200 ms client timeout fires reliably. A fast call like getblock
+    // can finish inside even a 1 ms timeout on a local node.
     await expect(
-      client.call('getblock', [bestHash, 2], { timeout: 1 }),
+      client.call('waitfornewblock', [3000], { timeout: 200 }),
     ).rejects.toMatchObject({
       name: 'RpcCallError',
       message: expect.stringContaining('timeout'),

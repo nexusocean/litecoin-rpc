@@ -5,7 +5,6 @@ import type {
   RawTxOutput,
   DecodeRawTransactionResult,
   DecodeScriptResult,
-  FundRawTransactionResult,
   SignRawTransactionResult,
   PrevTx,
 } from '../../types/index.js';
@@ -18,10 +17,6 @@ export interface RawTransactionMethods {
   ): Promise<string>;
   decodeRawTransaction(hex: string): Promise<DecodeRawTransactionResult>;
   decodeScript(hex: string): Promise<DecodeScriptResult>;
-  fundRawTransaction(
-    hex: string,
-    options?: Record<string, unknown>,
-  ): Promise<FundRawTransactionResult>;
   sendRawTransaction(hex: string, allowHighFees?: boolean): Promise<string>;
   signRawTransactionWithKey(
     hex: string,
@@ -47,12 +42,6 @@ export function createRawTransactionMethods(
 
     decodeScript: (hex: string) =>
       callRpc<DecodeScriptResult>(http, 'decodescript', [hex]),
-
-    fundRawTransaction: (hex: string, options = {}) =>
-      callRpc<FundRawTransactionResult>(http, 'fundrawtransaction', [
-        hex,
-        options,
-      ]),
 
     sendRawTransaction: (hex: string, allowHighFees = false) =>
       callRpc<string>(http, 'sendrawtransaction', [hex, allowHighFees]),

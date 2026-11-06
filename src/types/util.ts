@@ -23,6 +23,9 @@ export interface BalanceGroup {
 }
 
 export interface Balances {
-  mine: BalanceGroup;
+  mine: BalanceGroup & {
+    /** Only present on wallets created with `avoidReuse`: coins sent to addresses already spent from. */
+    used?: number;
+  };
   watchonly?: BalanceGroup;
 }

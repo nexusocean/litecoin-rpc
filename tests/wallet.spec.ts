@@ -3,6 +3,8 @@ import {
   maybeDescribeUnlocked,
   shouldTestSend,
   WALLET_PASSPHRASE,
+  unlockWallet,
+  lockWallet,
 } from './setup.js';
 
 const client = makeClient();
@@ -32,6 +34,22 @@ describe('getNewAddress', () => {
     const addr = await client.getNewAddress('test-label');
     expect(typeof addr).toBe('string');
     expect(addr.length).toBeGreaterThan(0);
+  });
+
+  it('returns a bech32 address when asked', async () => {
+    const addr = await client.getNewAddress(undefined, 'bech32');
+    expect(addr).toMatch(/^(ltc1|tltc1|rltc1)/);
+  });
+
+  it('returns an MWEB address when asked', async () => {
+    // MWEB addresses need the wallet unlocked.
+    await unlockWallet(client);
+    try {
+      const addr = await client.getNewAddress('', 'mweb');
+      expect(addr).toMatch(/^(ltcmweb1|tmweb1)/);
+    } finally {
+      await lockWallet(client);
+    }
   });
 });
 
@@ -143,6 +161,9 @@ describe('listSinceBlock', () => {
 });
 
 (shouldTestSend ? describe : describe.skip)('sendToAddress', () => {
+  beforeAll(() => unlockWallet(client));
+  afterAll(() => lockWallet(client));
+
   it('sends to an address and returns txid', async () => {
     const addr = await client.getNewAddress();
     const txid = await client.sendToAddress(addr, 0.0001);
@@ -214,7 +235,8 @@ maybeDescribeUnlocked('signMessage', () => {
   afterAll(() => client.walletLock());
 
   it('returns a signature string for a wallet address', async () => {
-    const address = await client.getRawChangeAddress();
+    // signmessage only works with legacy (P2PKH) addresses.
+    const address = await client.getNewAddress('', 'legacy');
     const signature = await client.signMessage(address, 'test message');
     expect(typeof signature).toBe('string');
     expect(signature.length).toBeGreaterThan(0);

@@ -2,6 +2,7 @@ import type { AxiosInstance } from 'axios';
 import { callRpc } from '../rpc.js';
 import type {
   CallOptions,
+  AddressType,
   WalletInfo,
   ValidateAddressResult,
   AddressInfo,
@@ -19,17 +20,24 @@ import type {
   ImportMultiRequest,
   ImportMultiOptions,
   ImportMultiResult,
+  CreateWalletOptions,
   CreateWalletResult,
+  RescanBlockchainResult,
   Balances,
   PrevTx,
   SignRawTransactionResult,
+  FundRawTransactionResult,
 } from '../../types/index.js';
 
 export interface WalletMethods {
   getWalletInfo(): Promise<WalletInfo>;
   getBalance(minconf?: number): Promise<number>;
   getUnconfirmedBalance(): Promise<number>;
-  getNewAddress(label?: string): Promise<string>;
+  /**
+   * `addressType` defaults to the node's `-addresstype`. `'mweb'` needs the
+   * wallet unlocked.
+   */
+  getNewAddress(label?: string, addressType?: AddressType): Promise<string>;
   validateAddress(address: string): Promise<ValidateAddressResult>;
   getAddressInfo(address: string): Promise<AddressInfo>;
   getTransaction(txid: string): Promise<WalletTransaction>;
@@ -62,7 +70,7 @@ export interface WalletMethods {
     label?: string,
     rescan?: boolean,
     p2sh?: boolean,
-  ): Promise<void>;
+  ): Promise<null>;
   getRawChangeAddress(): Promise<string>;
   listAddressBalances(minAmount?: number): Promise<AddressBalances>;
   listAddressGroupings(): Promise<AddressGrouping>;
@@ -91,8 +99,9 @@ export interface WalletMethods {
     privKey: string,
     label?: string,
     rescan?: boolean,
-  ): Promise<void>;
-  importPubKey(pubKey: string, label?: string, rescan?: boolean): Promise<void>;
+  ): Promise<null>;
+  importPubKey(pubKey: string, label?: string, rescan?: boolean): Promise<null>;
+  /** Legacy (P2PKH) addresses only; the wallet must be unlocked. */
   signMessage(address: string, message: string): Promise<string>;
   lockUnspent(
     unlock: boolean,
@@ -110,17 +119,32 @@ export interface WalletMethods {
     requests: ImportMultiRequest[],
     options?: ImportMultiOptions,
   ): Promise<ImportMultiResult[]>;
-  abandonTransaction(txid: string): Promise<void>;
+  abandonTransaction(txid: string): Promise<null>;
   createWallet(
     name: string,
-    opts?: { descriptors?: boolean; passphrase?: string },
+    opts?: CreateWalletOptions,
   ): Promise<CreateWalletResult>;
+  // Tops up the keypool; on a watch-only wallet this derives more addresses
+  // from the imported xpub ranges.
+  keypoolRefill(newSize?: number): Promise<null>;
+  rescanBlockchain(
+    startHeight?: number,
+    stopHeight?: number,
+  ): Promise<RescanBlockchainResult>;
   getBalances(): Promise<Balances>;
   signRawTransactionWithWallet(
     hex: string,
     prevtxs?: PrevTx[],
     sighashtype?: string,
   ): Promise<SignRawTransactionResult>;
+  /**
+   * Adds inputs and change from this wallet to a raw transaction. Needs the
+   * wallet unlocked: Litecoin derives an MWEB change address while funding.
+   */
+  fundRawTransaction(
+    hex: string,
+    options?: Record<string, unknown>,
+  ): Promise<FundRawTransactionResult>;
 }
 
 export function createWalletMethods(
@@ -144,7 +168,10 @@ export function createWalletMethods(
       return rpc<number>('getunconfirmedbalance', []);
     },
 
-    getNewAddress(label?: string): Promise<string> {
+    getNewAddress(label?: string, addressType?: AddressType): Promise<string> {
+      if (addressType !== undefined) {
+        return rpc<string>('getnewaddress', [label ?? '', addressType]);
+      }
       return rpc<string>('getnewaddress', label !== undefined ? [label] : []);
     },
 
@@ -172,14 +199,19 @@ export function createWalletMethods(
       ]);
     },
 
+    // includeWatchOnly unset = node default (true on watch-only wallets).
     listSinceBlock(
       blockhash?: string,
       targetConfirmations: number = 1,
-      includeWatchOnly: boolean = false,
+      includeWatchOnly?: boolean,
     ): Promise<ListSinceBlockResult> {
       const params: unknown[] = [];
-      if (blockhash !== undefined) {
-        params.push(blockhash, targetConfirmations, includeWatchOnly);
+      if (blockhash !== undefined || includeWatchOnly !== undefined) {
+        params.push(
+          blockhash ?? null,
+          targetConfirmations,
+          includeWatchOnly ?? null,
+        );
       }
       return rpc<ListSinceBlockResult>('listsinceblock', params);
     },
@@ -223,7 +255,7 @@ export function createWalletMethods(
     },
 
     importAddress: (address, label = '', rescan = true, p2sh = false) =>
-      rpc<void>('importaddress', [address, label, rescan, p2sh]),
+      rpc<null>('importaddress', [address, label, rescan, p2sh]),
 
     getRawChangeAddress: () => rpc<string>('getrawchangeaddress'),
 
@@ -234,15 +266,16 @@ export function createWalletMethods(
 
     listLockUnspent: () => rpc<LockedUnspent[]>('listlockunspent'),
 
+    // includeWatchOnly unset = node default (true on watch-only wallets).
     listReceivedByAddress: (
       minconf = 1,
       includeEmpty = false,
-      includeWatchOnly = false,
+      includeWatchOnly,
     ) =>
       rpc<ReceivedByAddressEntry[]>('listreceivedbyaddress', [
         minconf,
         includeEmpty,
-        includeWatchOnly,
+        includeWatchOnly ?? null,
       ]),
 
     setMinInput: (amount: number) => rpc<boolean>('setmininput', [amount]),
@@ -267,10 +300,10 @@ export function createWalletMethods(
       ),
 
     importPrivKey: (privKey: string, label = '', rescan = true) =>
-      rpc<void>('importprivkey', [privKey, label, rescan]),
+      rpc<null>('importprivkey', [privKey, label, rescan]),
 
     importPubKey: (pubKey: string, label = '', rescan = true) =>
-      rpc<void>('importpubkey', [pubKey, label, rescan]),
+      rpc<null>('importpubkey', [pubKey, label, rescan]),
 
     signMessage: (address: string, message: string) =>
       rpc<string>('signmessage', [address, message]),
@@ -302,19 +335,25 @@ export function createWalletMethods(
     ) => rpc<ImportMultiResult[]>('importmulti', [requests, options]),
 
     abandonTransaction: (txid: string) =>
-      rpc<void>('abandontransaction', [txid]),
+      rpc<null>('abandontransaction', [txid]),
 
-    createWallet: (
-      name: string,
-      opts: { descriptors?: boolean; passphrase?: string } = {},
-    ) =>
+    createWallet: (name: string, opts: CreateWalletOptions = {}) =>
       rpc<CreateWalletResult>('createwallet', [
         name,
-        false, // disable_private_keys
-        false, // blank
+        opts.disablePrivateKeys ?? false,
+        opts.blank ?? false,
         opts.passphrase ?? '',
-        false, // avoid_reuse
+        opts.avoidReuse ?? false,
         opts.descriptors ?? false,
+      ]),
+
+    keypoolRefill: (newSize?: number) =>
+      rpc<null>('keypoolrefill', newSize !== undefined ? [newSize] : []),
+
+    rescanBlockchain: (startHeight?: number, stopHeight?: number) =>
+      rpc<RescanBlockchainResult>('rescanblockchain', [
+        startHeight ?? null,
+        stopHeight ?? null,
       ]),
 
     getBalances: () => rpc<Balances>('getbalances'),
@@ -329,5 +368,8 @@ export function createWalletMethods(
         prevtxs,
         sighashtype,
       ]),
+
+    fundRawTransaction: (hex: string, options: Record<string, unknown> = {}) =>
+      rpc<FundRawTransactionResult>('fundrawtransaction', [hex, options]),
   };
 }

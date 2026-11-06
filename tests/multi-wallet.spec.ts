@@ -1,9 +1,10 @@
-import { makeClient, maybeDescribeMultiWallet } from './setup.js';
+import { makeUnscopedClient, maybeDescribeMultiWallet } from './setup.js';
 import type { RpcCallError } from '../src/index.js';
 
-const client = makeClient();
+const client = makeUnscopedClient();
 
 const TEST_WALLET = 'ltc-rpc-multiwallet-test';
+const WATCH_WALLET = 'ltc-rpc-watchonly-test';
 
 let defaultWallet: string;
 
@@ -21,8 +22,8 @@ maybeDescribeMultiWallet('named wallets', () => {
 
   afterAll(async () => {
     const wallets = await client.call<string[]>('listwallets');
-    if (wallets.includes(TEST_WALLET)) {
-      await client.call('unloadwallet', [TEST_WALLET]);
+    for (const name of [TEST_WALLET, WATCH_WALLET]) {
+      if (wallets.includes(name)) await client.call('unloadwallet', [name]);
     }
   });
 
@@ -84,5 +85,25 @@ maybeDescribeMultiWallet('named wallets', () => {
     expect((res?.result as { walletname: string }).walletname).toBe(
       TEST_WALLET,
     );
+  });
+
+  it('createWallet with disablePrivateKeys makes a watch-only wallet', async () => {
+    try {
+      await client.createWallet(WATCH_WALLET, {
+        disablePrivateKeys: true,
+        blank: true,
+      });
+    } catch (err) {
+      if (!/already exists/i.test((err as RpcCallError).message)) throw err;
+      await client.call('loadwallet', [WATCH_WALLET]);
+    }
+    const watch = client.wallet(WATCH_WALLET);
+    const info = await watch.getWalletInfo();
+    expect(info.private_keys_enabled).toBe(false);
+    expect(info.keypoolsize).toBe(0);
+    // No keys and no imported xpub: nothing to hand out.
+    await expect(watch.getNewAddress()).rejects.toMatchObject({
+      name: 'RpcCallError',
+    });
   });
 });

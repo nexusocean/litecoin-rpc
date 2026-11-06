@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { createHash } from 'node:crypto';
-import { makeClient } from './setup.js';
+import { makeClient, unlockWallet, lockWallet } from './setup.js';
 import type { CanonicalUnspentOutput } from '../src/index.js';
 
 const client = makeClient();
@@ -61,6 +61,10 @@ describe('decodeScript', () => {
 });
 
 describe('fundRawTransaction', () => {
+  // Funding derives an MWEB change (stealth) address, which needs the keys.
+  beforeAll(() => unlockWallet(client));
+  afterAll(() => lockWallet(client));
+
   it('returns funded hex with fee and changepos', async () => {
     if (!utxo) return;
     const unfunded = await client.createRawTransaction([], {
@@ -76,6 +80,9 @@ describe('fundRawTransaction', () => {
 });
 
 describe('signRawTransactionWithWallet', () => {
+  beforeAll(() => unlockWallet(client));
+  afterAll(() => lockWallet(client));
+
   it('returns signed hex and complete flag', async () => {
     if (!utxo) return;
     const result = await client.signRawTransactionWithWallet(rawHex);

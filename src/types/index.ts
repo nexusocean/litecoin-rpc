@@ -61,6 +61,7 @@ export type {
   WalletInfo,
   ValidateAddressResult,
   AddressInfo,
+  AddressType,
   WalletTxCategory,
   WalletTransactionDetail,
   WalletTransactionListEntry,
@@ -77,6 +78,8 @@ export type {
   ImportMultiRequest,
   ImportMultiOptions,
   ImportMultiResult,
+  CreateWalletOptions,
+  RescanBlockchainResult,
 } from './wallet.js';
 
 export type {
